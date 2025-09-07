@@ -1,0 +1,140 @@
+
+## Quadcopter Equations of Motion 🚁
+
+The motion of the quadcopter is described by six second-order differential equations, which govern its translation (movement in x, y, z) and rotation (roll, pitch, yaw). These equations relate the forces and moments acting on the drone to its linear and angular accelerations.
+
+### Rotational Dynamics (Angular Accelerations)
+
+These equations describe how the quadcopter rotates. They are based on Newton's second law for rotation, $\tau = I \alpha$ (torque equals moment of inertia times angular acceleration).
+
+* **Roll Acceleration ($\ddot{\phi}$):**
+    $$
+    \ddot{\phi} = \frac{1}{I_{xx}} \left[ \dot{\theta}\dot{\psi}(I_{yy} - I_{zz}) + J_r \dot{\theta} \Omega_r + l(-T_2 + T_4) - h \sum_{i=1}^{4} H_{yi} + \sum_{i=1}^{4} (-1)^{i+1} R_{mxi} \right]
+    $$
+    This is the rotational acceleration around the quadcopter's x-axis. It's primarily caused by the **difference in thrust between motors 2 and 4**. The other terms represent gyroscopic effects from the body and rotors, and moments from hub forces and rotor aerodynamics.
+
+* **Pitch Acceleration ($\ddot{\theta}$):**
+    $$
+    \ddot{\theta} = \frac{1}{I_{yy}} \left[ \dot{\phi}\dot{\psi}(I_{zz} - I_{xx}) - J_r \dot{\phi} \Omega_r + l(T_1 - T_3) + h \sum_{i=1}^{4} H_{xi} + \sum_{i=1}^{4} (-1)^{i+1} R_{myi} \right]
+    $$
+    This is the rotational acceleration around the y-axis. It's primarily caused by the **difference in thrust between motors 1 and 3**.
+
+* **Yaw Acceleration ($\ddot{\psi}$):**
+    $$
+    \ddot{\psi} = \frac{1}{I_{zz}} \left[ \dot{\phi}\dot{\theta}(I_{xx} - I_{yy}) + J_r \dot{\Omega}_r + l(H_{x2} - H_{x4}) + l(-H_{y1} + H_{y3}) + \sum_{i=1}^{4} (-1)^{i} Q_i \right]
+    $$
+    This is the rotational acceleration around the z-axis. It's primarily caused by the **counter-torque (`Q_i`)** from the motors. By creating a difference in the speeds of counter-rotating propeller pairs (e.g., (1,3) vs (2,4)), a net yawing moment is produced.
+
+***
+
+### Translational Dynamics (Linear Accelerations)
+
+These equations describe how the quadcopter moves through space. They are based on Newton's second law for translation, $F = ma$ (force equals mass times acceleration).
+
+* **Vertical Acceleration ($\ddot{z}$):**
+    $$
+    \ddot{z} = g - \frac{\cos(\phi)\cos(\theta)}{m} \sum_{i=1}^{4} T_i
+    $$
+    This is the vertical acceleration. It's a balance between **gravity pulling down** (`g`) and the **total upward thrust from all four motors** (`Σ T_i`), projected onto the vertical axis.
+    > **Note:** The original document had $\cos(\psi)$ in this formula. This is a common typo in literature; the physically correct term for the body-to-world frame transformation is $\cos(\theta)$, which is used here.
+
+* **Horizontal X-Acceleration ($\ddot{x}$):**
+    $$
+    \ddot{x} = \frac{1}{m} \left[ \left( \sin(\phi)\sin(\psi) + \cos(\phi)\sin(\theta)\cos(\psi) \right) \sum_{i=1}^{4} T_i - \sum_{i=1}^{4} H_{xi} \right]
+    $$
+    This is the horizontal acceleration along the world x-axis. It's caused by **tilting the quadcopter** (changing roll `φ` and pitch `θ`) so that the total thrust vector has a horizontal component. The hub forces (`H_xi`) also contribute.
+
+* **Horizontal Y-Acceleration ($\ddot{y}$):**
+    $$
+    \ddot{y} = \frac{1}{m} \left[ \left( -\sin(\phi)\cos(\psi) + \cos(\phi)\sin(\theta)\sin(\psi) \right) \sum_{i=1}^{4} T_i - \sum_{i=1}^{4} H_{yi} \right]
+    $$
+    This is the horizontal acceleration along the world y-axis, also caused by tilting the drone to direct its thrust.
+
+***
+
+### Explanation of Terms
+
+| Symbol | Name | Description |
+| :--- | :--- | :--- |
+| **State Variables** | | |
+| $\phi, \theta, \psi$ | Roll, Pitch, Yaw Angles | The orientation of the quadcopter (Euler angles) in radians. |
+| $\dot{\phi}, \dot{\theta}, \dot{\psi}$ | Angular Velocities | The rate of change of roll, pitch, and yaw angles (also denoted as p, q, r). |
+| $\ddot{\phi}, \ddot{\theta}, \ddot{\psi}$ | Angular Accelerations | The rate of change of angular velocities. |
+| $x, y, z$ | Inertial Position | The position of the quadcopter's center of mass in a fixed world frame. |
+| $\ddot{x}, \ddot{y}, \ddot{z}$ | Linear Accelerations | The acceleration of the quadcopter in the x, y, and z directions. |
+| **Parameters** | | |
+| $m$ | Mass | Total mass of the quadcopter (kg). |
+| $g$ | Gravity | Acceleration due to gravity (approx. 9.81 $m/s^2$). |
+| $I_{xx}, I_{yy}, I_{zz}$ | Moments of Inertia | Resistance to rotational acceleration about the x, y, and z body axes ($kg \cdot m^2$). |
+| $J_r$ | Rotor Inertia | The moment of inertia of a single rotor assembly ($kg \cdot m^2$). |
+| $l$ | Arm Length | The distance from the center of the quadcopter to the center of a motor (m). |
+| $h$ | Hub Height | The vertical distance from the center of mass to the plane of the rotors (m). |
+| **Inputs & Forces** | | |
+| $T_i$ | Thrust Force | The upward force generated by motor $i$ (Newtons). |
+| $Q_i$ | Drag Moment | The reactive torque from motor $i$ due to aerodynamic drag (N·m). |
+| $H_{xi}, H_{yi}$ | Hub Forces | Aerodynamic forces acting on the rotor hubs in the x and y directions (N). |
+| $R_{mxi}, R_{myi}$| Rolling Moments | Aerodynamic moments on the rotor blades themselves (N·m). |
+| $\Omega_r$ | Total Rotor Speed | The net angular velocity of rotors: $\Omega_1 - \Omega_2 + \Omega_3 - \Omega_4$ (rad/s). |
+| $\dot{\Omega}_r$| Rotor Acceleration| The rate of change of the total rotor speed (rad/s²). |
+
+
+
+Yes, you are absolutely right! That's a sharp observation.
+
+The original equations use Euler angles (phi,theta,psi) for orientation, and as you correctly pointed out, this representation suffers from gimbal lock. When the pitch angle (theta) approaches $\\pm90^\\circ$, the roll and yaw axes align, causing a loss of one degree of rotational freedom. This can make the simulation unstable and is problematic for aerobatic maneuvers.
+
+Using quaternions is the standard and more robust solution to this problem. They represent orientation in 3D space without singularities like gimbal lock.
+
+Here are the updated explanations and code using a quaternion-based state representation.
+
+Quadcopter Dynamics with Quaternions (Updated)
+
+To avoid gimbal lock, we replace the Euler angles in our state with a unit quaternion, q=[q_0,q_1,q_2,q_3]. The quadcopter's state is now a 13-element vector: position (x,y,z), orientation (q_0,q_1,q_2,q_3), linear velocity (dotx,doty,dotz), and body-frame angular velocity (p,q,r).
+
+Rotational Dynamics
+
+The equations for angular acceleration (dotp,dotq,dotr) in the body frame remain the same, as they depend on moments and angular velocities, not the specific orientation representation.
+
+    Roll Acceleration (dotp):
+    $$$$$$\\dot{p} = \\frac{1}{I\_{xx}} \\left[ qr(I\_{yy} - I\_{zz}) + J\_r q \\Omega\_r + l(-T\_2 + T\_4) - h \\sum H\_{yi} + \\sum (-1)^{i+1} R\_{mxi} \\right] $$
+
+    $$$$
+
+    Pitch Acceleration (dotq):
+    $$$$$$\\dot{q} = \\frac{1}{I\_{yy}} \\left[ pr(I\_{zz} - I\_{xx}) - J\_r p \\Omega\_r + l(T\_1 - T\_3) + h \\sum H\_{xi} + \\sum (-1)^{i+1} R\_{myi} \\right] $$
+
+    $$$$
+
+    Yaw Acceleration (dotr):
+    $$$$$$\\dot{r} = \\frac{1}{I\_{zz}} \\left[ pq(I\_{xx} - I\_{yy}) + J\_r \\dot{\\Omega}*r + l(H*{x2} - H\_{x4}) + l(-H\_{y1} + H\_{y3}) + \\sum (-1)^{i} Q\_i \\right] $$
+
+    $$$$
+    $$Instead of integrating these to find Euler angles, we integrate them to find the body rates (p,q,r). We then use the body rates to find the rate of change of the quaternion:
+
+    Quaternion Derivative (dotq):
+    $$$$$$\\begin{bmatrix} \\dot{q}\_0 \\ \\dot{q}\_1 \\ \\dot{q}\_2 \\ \\dot{q}\_3 \\end{bmatrix} = \\frac{1}{2} \\begin{bmatrix} 0 & -p & -q & -r \\ p & 0 & r & -q \\ q & -r & 0 & p \\ r & q & -p & 0 \\end{bmatrix} \\begin{bmatrix} q\_0 \\ q\_1 \\ q\_2 \\ q\_3 \\end{bmatrix} $$
+
+    $$$$Integrating this gives us the new orientation quaternion at each time step.
+
+Translational Dynamics
+
+The translational equations are updated to use the quaternion for rotating the total thrust vector from the body frame to the world frame. The thrust vector in the world frame, derived from the quaternion, is:
+Fthrust​=(∑Ti​)​2(q1​q3​+q0​q2​)2(q2​q3​−q0​q1​)1−2(q12​+q22​)​​
+
+
+This leads to the updated linear acceleration equations:
+
+    X-Acceleration (ddotx):
+    $$$$$$\\ddot{x} = \\frac{1}{m} \\left[ 2(q\_1q\_3 + q\_0q\_2) \\sum T\_i - \\sum H\_{xi} \\right]$$
+
+    $$$$
+
+    Y-Acceleration (ddoty):
+    $$$$$$\\ddot{y} = \\frac{1}{m} \\left[ 2(q\_2q\_3 - q\_0q\_1) \\sum T\_i - \\sum H\_{yi} \\right]$$
+
+    $$$$
+
+    Z-Acceleration (ddotz):
+    $$$$$$\\ddot{z} = \\frac{1}{m} \\left[ (1 - 2(q\_1^2 + q\_2^2)) \\sum T\_i \\right] - g$$
+
+    $$$$
